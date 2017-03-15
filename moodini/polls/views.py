@@ -1,5 +1,5 @@
 from django.http import HttpResponse, JsonResponse
-from .models import Poll, Choice
+from .models import Poll, Choice, SelectedMood
 from Queue import PriorityQueue
 
 
@@ -11,14 +11,28 @@ def start_poll(request):
     poll_id = request.POST.get('poll')
     players = request.POST.get('players')
     poll = Poll(id=poll_id, people=players)
-    poll.generate_locations()
     poll.save()
 
     return HttpResponse("You're user %s." % request.POST.get('user'))
 
 
+def select_mood(request, poll_id):
+    mood = request.POST.get('mood')
+    user = request.POST.get('user')
+    poll = Poll.objects.get(id=poll_id)
+    mood = SelectedMood(poll=poll, mood=mood, user=user)
+    mood.save()
+    return HttpResponse("OK")
+
+
 def get_location(request, poll_id, location_id):
     poll = Poll.objects.get(id=poll_id)
+    if not poll.is_mood_selected():
+        return JsonResponse({})
+
+    if poll.selectedlocations_set.count() != 5:
+        poll.generate_locations()
+
     location = poll.selectedlocations_set.get(num=location_id).location
     return JsonResponse({
         'name': location.location_name,

@@ -33,6 +33,9 @@ class Poll(models.Model):
                 return False
         return True
 
+    def is_mood_selected(self):
+        return self.selectedmood_set.count() == self.people
+
 
 class SelectedLocations(models.Model):
     class Meta:
@@ -44,6 +47,18 @@ class SelectedLocations(models.Model):
 
     def __unicode__(self):
         return str(self.poll) + ' - ' + str(self.num)
+
+
+class SelectedMood(models.Model):
+    class Meta:
+        unique_together = (('poll', 'user'),)
+
+    poll = models.ForeignKey(Poll, on_delete=models.CASCADE)
+    mood = models.CharField(max_length=200)
+    user = models.CharField(max_length=200)
+
+    def __unicode__(self):
+        return str(self.poll) + ' - ' + self.user + ' - ' + self.mood
 
 
 class Choice(models.Model):
