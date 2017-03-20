@@ -57,15 +57,17 @@ def get_result(request, poll_id):
     if not poll.is_closed():
         return JsonResponse({})
 
-    q = PriorityQueue()
-    for location in poll.selectedlocations_set.all():
-        votes = location.choice_set.filter(vote='1').count()
-        q.put((-votes, location.location))
+    if poll.result is None:
+        q = PriorityQueue()
+        for location in poll.selectedlocations_set.all():
+            votes = location.choice_set.filter(vote='1').count()
+            q.put((-votes, location.location))
 
-    result = q.get()[1]
+        poll.result = q.get()[1]
+        poll.save()
 
     return JsonResponse({
-        'name': result.location_name,
-        'img': result.image,
-        'description': result.description
+        'name': poll.result.location_name,
+        'img': poll.result.image,
+        'description': poll.result.description
     })
